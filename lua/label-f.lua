@@ -2,7 +2,7 @@ local api = vim.api
 
 local state = { prev_input = nil }
 
-local function flit(kwargs)
+local function label_f(kwargs)
     -- Reinvent The Wheel #1
     -- Custom targets callback, ~90% of it replicating what Leap does by default.
 
@@ -106,14 +106,13 @@ local function flit(kwargs)
     require("leap").leap(cc)
 end
 
+local config = {}
+
 local function setup(kwargs)
-    local kwargs = kwargs or {}
-    kwargs.cc = {} --> would-be `opts.current_call`
-    kwargs.cc.ft = true
-    kwargs.cc.inclusive_op = true
+    config = kwargs or {}
 
     -- Set keymappings.
-    kwargs.keys = kwargs.keys or kwargs.keymaps or { f = "f", F = "F", t = "t", T = "T" }
+    config.keys = kwargs.keys or kwargs.keymaps or { f = "f", F = "F", t = "t", T = "T" }
     local key = kwargs.keys
     local motion_specific_args = {
         [key.f] = {},
@@ -121,19 +120,6 @@ local function setup(kwargs)
         [key.t] = { offset = -1, t = true },
         [key.T] = { backward = true, offset = 1, t = true },
     }
-    local labeled_modes = kwargs.labeled_modes and kwargs.labeled_modes:gsub("v", "x") or "x"
-    for _, key in pairs(kwargs.keys) do
-        for _, mode in ipairs({ "n", "x", "o" }) do
-            -- Make sure to create a new table for each mode (and not pass the
-            -- outer one by reference here inside the loop).
-            local kwargs = vim.deepcopy(kwargs)
-            kwargs.cc = vim.tbl_extend("force", kwargs.cc, motion_specific_args[key])
-            kwargs.unlabeled = not labeled_modes:match(mode)
-            vim.keymap.set(mode, key, function()
-                flit(kwargs)
-            end)
-        end
-    end
 
     -- Reinvent The Wheel #2
     -- Ridiculous hack to prevent having to expose a `multiline` flag in
@@ -157,10 +143,10 @@ local function setup(kwargs)
                 )
             end
         end
-        api.nvim_create_augroup("Flit", {})
+        api.nvim_create_augroup("Label_f", {})
         api.nvim_create_autocmd("User", {
             pattern = "LeapEnter",
-            group = "Flit",
+            group = "Label_f",
             callback = function()
                 if state.args.ft then
                     state.saved_backdrop_fn = require("leap.highlight")["apply-backdrop"]
@@ -170,7 +156,7 @@ local function setup(kwargs)
         })
         api.nvim_create_autocmd("User", {
             pattern = "LeapLeave",
-            group = "Flit",
+            group = "Label_f",
             callback = function()
                 if state.args.ft then
                     require("leap.highlight")["apply-backdrop"] = state.saved_backdrop_fn
@@ -181,4 +167,14 @@ local function setup(kwargs)
     end
 end
 
-return { setup = setup }
+return {
+    setup = setup,
+    label_f = function(kwargs)
+        config.cc = {} --> would-be `opts.current_call`
+        config.cc.ft = true
+        config.cc.inclusive_op = true
+        config.unlabeled = true
+        config.cc = vim.tbl_extend("force", config.cc, kwargs)
+        label_f(config)
+    end,
+}
