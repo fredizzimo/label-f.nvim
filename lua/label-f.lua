@@ -20,7 +20,7 @@ local function flit(kwargs)
             return
         end
         -- Repeat with the previous input?
-        local repeat_key = require("leap.opts").special_keys.next_target[1]
+        local repeat_key = require("leap.opts").special_keys.next_target
         if ch == api.nvim_replace_termcodes(repeat_key, true, true, true) then
             if state.prev_input then
                 ch = state.prev_input
@@ -102,37 +102,6 @@ local function flit(kwargs)
     end
 
     cc.opts = kwargs.opts or {}
-    local key = kwargs.keys
-    -- In any case, keep only safe labels.
-    cc.opts.labels = {}
-    if kwargs.unlabeled then
-        cc.opts.safe_labels = {}
-    else
-        -- Remove labels conflicting with the next/prev keys.
-        -- The first label will be the repeat key itself.
-        -- Note: this doesn't work well for non-alphabetic characters.
-        local filtered = { cc.t and key.t or key.f }
-        local to_ignore = cc.t and { key.t, key.T } or { key.f, key.F }
-        for _, label in ipairs(require("leap").opts.safe_labels) do
-            if not vim.tbl_contains(to_ignore, label) then
-                table.insert(filtered, label)
-            end
-        end
-        cc.opts.safe_labels = filtered
-    end
-    -- Set the next/prev ("clever-f") keys.
-    cc.opts.special_keys = vim.deepcopy(require("leap").opts.special_keys)
-    if type(cc.opts.special_keys.next_target) == "string" then
-        cc.opts.special_keys.next_target = { cc.opts.special_keys.next_target }
-    end
-    if type(cc.opts.special_keys.prev_target) == "string" then
-        cc.opts.special_keys.prev_target = { cc.opts.special_keys.prev_target }
-    end
-    table.insert(cc.opts.special_keys.next_target, cc.t and key.t or key.f)
-    table.insert(cc.opts.special_keys.prev_target, cc.t and key.T or key.F)
-    -- Add ; and , too.
-    table.insert(cc.opts.special_keys.next_target, ";")
-    table.insert(cc.opts.special_keys.prev_target, ",")
 
     require("leap").leap(cc)
 end
