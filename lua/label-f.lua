@@ -111,16 +111,6 @@ local config = {}
 local function setup(kwargs)
     config = kwargs or {}
 
-    -- Set keymappings.
-    config.keys = kwargs.keys or kwargs.keymaps or { f = "f", F = "F", t = "t", T = "T" }
-    local key = kwargs.keys
-    local motion_specific_args = {
-        [key.f] = {},
-        [key.F] = { backward = true },
-        [key.t] = { offset = -1, t = true },
-        [key.T] = { backward = true, offset = 1, t = true },
-    }
-
     -- Reinvent The Wheel #2
     -- Ridiculous hack to prevent having to expose a `multiline` flag in
     -- the core: switch Leap's backdrop function to our special one here :)
